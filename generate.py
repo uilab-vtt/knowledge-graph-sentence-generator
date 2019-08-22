@@ -25,7 +25,9 @@ def get_string_from_item_node(item_node):
     elif result.startswith('person_'):
         result = result[len('person_'):]
     result = inflection.underscore(result)
-    if item_class == 'person':
+    if item_class == 'unknown':
+        return None 
+    elif item_class == 'person':
         result = inflection.humanize(result)
         result = inflection.titleize(result)
     elif item_class == 'video':
