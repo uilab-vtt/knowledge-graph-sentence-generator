@@ -2,6 +2,29 @@ import sys
 import json
 import inflection
 import template
+from pylanguagetool import api
+
+LANGUAGE_TOOL_URL = 'https://languagetool.org/api/v2/'
+
+def correct_text(text):
+    result = api.check(text, lang='en-US', api_url=LANGUAGE_TOOL_URL)
+    matches = [m for m in result['matches']]
+    matches.sort(key=lambda x: x['offset'])
+    chunks = []
+    cursor = 0
+    for match in matches:
+        replacements = match['replacements']
+        if not replacements:
+            continue
+        rep_value = replacements[0]['value']
+        offset = match['offset']
+        length = match['length']
+        chunks.append(text[cursor:offset])
+        chunks.append(rep_value)
+        cursor = offset + length
+    if cursor < len(text):
+        chunks.append(text[cursor:])
+    return ''.join(chunks)
 
 def load_graph(node_iter):
     graph = {}
@@ -62,11 +85,10 @@ def generate_prop_sentence_dict(graph, prop_node):
         'relation': relation_string,
     }
 
-    if len(result_string) > 1:
-        result_string = result_string[0].upper() + result_string[1:]
+    corrected_result_string = correct_text(result_string)
 
     return {
-        'content': result_string,
+        'content': corrected_result_string,
         'time_start': prop_node['time_start'],
         'time_end': prop_node['time_end'],
     }
